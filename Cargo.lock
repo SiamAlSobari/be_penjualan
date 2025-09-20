@@ -263,6 +263,7 @@ name = "backend"
 version = "0.1.0"
 dependencies = [
  "actix-web",
+ "dotenvy",
  "futures",
  "serde",
  "serde_json",

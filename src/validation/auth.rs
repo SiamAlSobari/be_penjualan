@@ -5,5 +5,8 @@ use validator::Validate;
 pub struct RegisterUser {
 
     #[validate(length(min= 3 , message ="Minimal 3 karakter"))]
-    username: String
+    username: String,
+
+    #[validate(email(message = "Format email tidak valid"))]
+    email: String
 }

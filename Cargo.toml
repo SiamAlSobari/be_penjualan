@@ -9,5 +9,5 @@ futures = "0.3.31"
 sqlx = {version ="0.7",features =["mysql","runtime-tokio-rustls","macros"]}
 serde_json = "1.0"
 serde = {version ="1.0",features =["derive"]}
-validator = { version = "0.16", features = ["derive"] }
+validator = { version = "0.19", features = ["derive"] }
 dotenvy = "0.15"

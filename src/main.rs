@@ -1,8 +1,13 @@
-use actix_web::{App, HttpServer, web};
+use actix_web::{
+    App, HttpServer,
+    web::{self},
+};
 use dotenvy::dotenv;
 use sqlx::mysql::MySqlPoolOptions;
 use std::env;
-
+mod handler;
+mod routes;
+mod validation;
 //main fn actix
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -17,11 +22,14 @@ async fn main() -> std::io::Result<()> {
         .connect(&db_url)
         .await
         .expect("connect");
-
     //koneksi server
     println!("server berjalan pada http://localhost:8080");
-    HttpServer::new(move || App::new().app_data(web::Data::new(pool.clone())))
-        .bind(("0.0.0.0", 8080))?
-        .run()
-        .await
+    HttpServer::new(move || {
+        App::new()
+            .app_data(web::Data::new(pool.clone()))
+            .configure(routes::config)
+    })
+    .bind(("0.0.0.0", 8080))?
+    .run()
+    .await
 }

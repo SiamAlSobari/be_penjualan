@@ -1,6 +1,6 @@
 use crate::validation::auth::RegisterUser;
 use actix_web::{HttpResponse, Responder, web};
-use backend::Response;
+use backend::{Response, ValidateErrItem, map_validation};
 use sqlx::MySqlPool;
 use uuid::Uuid;
 use validator::Validate;
@@ -70,10 +70,11 @@ pub async fn register(user: web::Json<RegisterUser>, pool: web::Data<MySqlPool>)
             }
         }
         Err(err) => {
-            let res = Response::<String> {
+            let errs = map_validation(err);
+            let res = Response::<Vec<ValidateErrItem>> {
                 status: "Failed".to_string(),
                 message: "Validation Error".to_string(),
-                data: Some(format!("{:?}", err)),
+                data: Some(errs),
             };
             HttpResponse::BadRequest().json(res)
         }

@@ -8,6 +8,9 @@ use std::env;
 mod handler;
 mod routes;
 mod validation;
+mod model;
+
+
 //main fn actix
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

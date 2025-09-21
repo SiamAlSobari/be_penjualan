@@ -13,7 +13,7 @@ pub struct User {
 
 #[derive(Debug, Deserialize, Serialize, FromRow)]
 pub struct Profile {
-    pub username: String,
+    pub user_name: String,
     pub user_id: String,
     pub avatar_url: String,
     pub created_at: NaiveDateTime,

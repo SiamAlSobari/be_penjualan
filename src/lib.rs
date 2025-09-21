@@ -1,6 +1,6 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize)]
+#[derive(Deserialize,Serialize)]
 pub struct Response<T> {
     pub status : String,
     pub message: String,

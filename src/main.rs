@@ -17,10 +17,10 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     //ambil db url di env
-    let db_url = env::var("DATABASE_URL").expect("Error env");
+    let db_url = env::var("DATABASE_URL").expect("ENV ERR");
 
     //Pool db atau koneksi db
-    let pool = MySqlPoolOptions::new()
+    let pool =  MySqlPoolOptions::new()
         .max_connections(5)
         .connect(&db_url)
         .await

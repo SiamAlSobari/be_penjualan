@@ -22,8 +22,8 @@ impl<'a> AuthService<'a> {
     }
 
     pub async fn register_user(&self, user: auth_validation::RegisterUser) -> HttpResponse {
-        if let Err(err) = user.validate() {
-            let errs = map_validation(err);
+        if let Err(err ) = user.validate() {
+            let errs: Vec<ValidateErrItem> = map_validation(err);
             return HttpResponse::BadRequest().json(Response::<Vec<ValidateErrItem>> {
                 status: "Failed".to_string(),
                 message: "Validation Error".to_string(),

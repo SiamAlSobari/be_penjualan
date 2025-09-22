@@ -15,7 +15,7 @@ impl<'a> ProfileRepository<'a> {
         &self,
         user_name: &str,
     ) -> Result<Option<profile_model::ResponseFindByUserName>, sqlx::Error> {
-        let profile = sqlx::query_as!(
+        let profile: Option<profile_model::ResponseFindByUserName> = sqlx::query_as!(
             profile_model::ResponseFindByUserName,
             "SELECT id,user_name FROM profiles WHERE user_name = ? LIMIT 1",
             user_name

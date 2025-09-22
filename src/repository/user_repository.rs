@@ -13,7 +13,7 @@ impl<'a> UserRepository<'a> {
     }
 
     pub async fn find_by_email(&self, email: &str) -> Result<Option<user_model::ResponseFindByEmail>, sqlx::Error> {
-        let user = sqlx::query_as!(
+        let user: Option<user_model::ResponseFindByEmail> = sqlx::query_as!(
             user_model::ResponseFindByEmail,
             "SELECT id,email FROM users WHERE email = ? LIMIT 1",
             email

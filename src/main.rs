@@ -9,7 +9,8 @@ mod handler;
 mod routes;
 mod validation;
 mod model;
-
+mod repository;
+mod service;
 
 //main fn actix
 #[actix_web::main]

@@ -1,9 +1,9 @@
-use sqlx::MySqlPool;
+use sqlx::{MySql, MySqlPool, Transaction};
 
 use crate::model::profile_model;
 
 pub struct ProfileRepository<'a> {
-    pool: &'a MySqlPool,
+    pub pool: &'a MySqlPool,
 }
 
 impl<'a> ProfileRepository<'a> {
@@ -25,10 +25,21 @@ impl<'a> ProfileRepository<'a> {
         Ok(profile)
     }
 
-    pub async fn insert_profile(&self, profile_id: &str,user_id: &str) -> Result<(), sqlx::Error> {
-        sqlx::query!("INSERT INTO profiles (id,user_id) VALUES (?,?)",profile_id, user_id)
-            .execute(self.pool)
-            .await?;
+    pub async fn insert_profile(
+        &self,
+        tx: &mut Transaction<'_, MySql>,
+        profile_id: &str,
+        user_id: &str,
+        user_name: &str,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query!(
+            "INSERT INTO profiles (id,user_id,user_name) VALUES (?,?,?)",
+            profile_id,
+            user_id,
+            user_name
+        )
+        .execute(&mut **tx)
+        .await?;    
         Ok(())
     }
 }

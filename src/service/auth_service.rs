@@ -3,7 +3,10 @@ use backend::{Response, ValidateErrItem, map_validation};
 use uuid::Uuid;
 use validator::Validate;
 
-use crate::{repository::{profile_repository, user_repository}, validation::auth_validation};
+use crate::{
+    repository::{profile_repository, user_repository},
+    validation::auth_validation,
+};
 
 pub struct AuthService<'a> {
     user_repo: user_repository::UserRepository<'a>,
@@ -22,7 +25,20 @@ impl<'a> AuthService<'a> {
     }
 
     pub async fn register_user(&self, user: auth_validation::RegisterUser) -> HttpResponse {
-        if let Err(err ) = user.validate() {
+        // Mulai satu transaksi saja
+        let mut tx = match self.user_repo.pool.begin().await {
+            Ok(tx) => tx,
+            Err(err) => {
+                return HttpResponse::InternalServerError().json(Response::<String> {
+                    status: "Failed".to_string(),
+                    message: "Gagal memulai transaksi".to_string(),
+                    data: Some(err.to_string()),
+                });
+            }
+        };
+
+        // Validasi
+        if let Err(err) = user.validate() {
             let errs: Vec<ValidateErrItem> = map_validation(err);
             return HttpResponse::BadRequest().json(Response::<Vec<ValidateErrItem>> {
                 status: "Failed".to_string(),
@@ -30,6 +46,8 @@ impl<'a> AuthService<'a> {
                 data: Some(errs),
             });
         }
+
+        // Cek duplikat email
         if let Ok(Some(_user)) = self.user_repo.find_by_email(&user.email).await {
             return HttpResponse::Conflict().json(Response::<()> {
                 status: "Failed".to_string(),
@@ -38,6 +56,7 @@ impl<'a> AuthService<'a> {
             });
         }
 
+        // Cek duplikat username
         if let Ok(Some(_profile)) = self.profile_repo.find_by_user_name(&user.user_name).await {
             return HttpResponse::Conflict().json(Response::<()> {
                 status: "Failed".to_string(),
@@ -45,28 +64,48 @@ impl<'a> AuthService<'a> {
                 data: None,
             });
         }
+
         let user_id = Uuid::new_v4().to_string();
         let profile_id = Uuid::new_v4().to_string();
-
         let hashed_password = bcrypt::hash(&user.password, bcrypt::DEFAULT_COST).unwrap();
+
+        // Insert user dalam transaksi
         if let Err(err) = self
             .user_repo
-            .insert_user(&user.email, &hashed_password, &user_id)
+            .insert_user(&mut tx, &user.email, &hashed_password, &user_id)
             .await
         {
+            let _ = tx.rollback().await;
             return HttpResponse::InternalServerError().json(Response::<String> {
                 status: "Failed".to_string(),
                 message: "Gagal insert user".to_string(),
                 data: Some(err.to_string()),
             });
         }
-        if let Err(err) = self.profile_repo.insert_profile(&profile_id,&user_id).await {
+
+        // Insert profile dalam transaksi
+        if let Err(err) = self
+            .profile_repo
+            .insert_profile(&mut tx, &profile_id, &user_id, &user.user_name)
+            .await
+        {
+            let _ = tx.rollback().await;
             return HttpResponse::InternalServerError().json(Response::<String> {
                 status: "Failed".to_string(),
                 message: "Gagal insert profile".to_string(),
                 data: Some(err.to_string()),
             });
         }
+
+        // Commit transaksi
+        if let Err(err) = tx.commit().await {
+            return HttpResponse::InternalServerError().json(Response::<String> {
+                status: "Failed".to_string(),
+                message: "Gagal commit transaksi".to_string(),
+                data: Some(err.to_string()),
+            });
+        }
+
         HttpResponse::Ok().json(Response::<()> {
             status: "Success".to_string(),
             message: "User dan profile berhasil dibuat ✅".to_string(),

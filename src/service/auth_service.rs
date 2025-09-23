@@ -112,4 +112,57 @@ impl<'a> AuthService<'a> {
             data: None,
         })
     }
+
+    pub async fn login_user(&self, user: auth_validation::LoginUser) -> HttpResponse {
+        // Validasi
+        if let Err(err) = user.validate() {
+            let errs: Vec<ValidateErrItem> = map_validation(err);
+            return HttpResponse::BadRequest().json(Response::<Vec<ValidateErrItem>> {
+                status: "Failed".to_string(),
+                message: "Validation Error".to_string(),
+                data: Some(errs),
+            });
+        }
+
+        //ambil by email
+        let user_db = match self.user_repo.find_by_email(&user.email).await {
+            Ok(Some(u)) => u,
+            Ok(None) => {
+                return HttpResponse::Unauthorized().json(Response::<()> {
+                    status: "Failed".to_string(),
+                    message: "Email atau password salah".to_string(),
+                    data: None,
+                });
+            }
+            Err(err) => {
+                return HttpResponse::InternalServerError().json(Response::<String> {
+                    status: "Failed".to_string(),
+                    message: "Gagal mengambil data user".to_string(),
+                    data: Some(err.to_string()),
+                });
+            }
+        };
+        let is_valid = match bcrypt::verify(&user.password, &user_db.hash_password) {
+            Ok(valid) => valid,
+            Err(err) => {
+                return HttpResponse::InternalServerError().json(Response::<String> {
+                    status: "Failed".to_string(),
+                    message: "Gagal verifikasi password".to_string(),
+                    data: Some(err.to_string()),
+                });
+            }
+        };
+        if !is_valid {
+            return HttpResponse::Unauthorized().json(Response::<()> {
+                status: "Failed".to_string(),
+                message: "Email atau password salah".to_string(),
+                data: None,
+            });
+        }
+        HttpResponse::Ok().json(Response::<()> {
+            status: "Success".to_string(),
+            message: "User berhasil login ✅".to_string(),
+            data: None,
+        })
+    }
 }

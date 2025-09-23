@@ -17,7 +17,7 @@ impl<'a> UserRepository<'a> {
     ) -> Result<Option<user_model::ResponseFindByEmail>, sqlx::Error> {
         let user: Option<user_model::ResponseFindByEmail> = sqlx::query_as!(
             user_model::ResponseFindByEmail,
-            "SELECT id,email FROM users WHERE email = ? LIMIT 1",
+            "SELECT id,email,hash_password FROM users WHERE email = ? LIMIT 1",
             email
         )
         .fetch_optional(self.pool)

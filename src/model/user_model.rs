@@ -4,4 +4,5 @@ use serde::{Deserialize, Serialize};
 pub struct ResponseFindByEmail {
     pub id: String,
     pub email: String,
+    pub hash_password:String
 }

@@ -1,5 +1,9 @@
-use actix_web::HttpResponse;
-use backend::{Response, ValidateErrItem, map_validation};
+use actix_web::{
+    HttpResponse,
+    cookie::{Cookie, SameSite},
+};
+use backend::{generate_jwt, map_validation, AuthResponse, Response, ValidateErrItem};
+use serde::Serialize;
 use uuid::Uuid;
 use validator::Validate;
 
@@ -67,7 +71,7 @@ impl<'a> AuthService<'a> {
 
         let user_id = Uuid::new_v4().to_string();
         let profile_id = Uuid::new_v4().to_string();
-        let hashed_password = bcrypt::hash(&user.password, bcrypt::DEFAULT_COST).unwrap();
+        let hashed_password = bcrypt::hash(&user.password, 10).unwrap();
 
         // Insert user dalam transaksi
         if let Err(err) = self
@@ -159,10 +163,22 @@ impl<'a> AuthService<'a> {
                 data: None,
             });
         }
-        HttpResponse::Ok().json(Response::<()> {
-            status: "Success".to_string(),
-            message: "User berhasil login ✅".to_string(),
-            data: None,
-        })
+
+        match generate_jwt(&user_db.id) {
+            Ok(token) => {
+                let cookie = Cookie::build("auth_token", token.clone())
+                    .path("/") // cookie berlaku di semua path
+                    .http_only(true) // aman, tidak bisa diakses JS
+                    .same_site(SameSite::Lax) // atau Strict / None sesuai kebutuhan
+                    .finish();
+                return HttpResponse::Ok().cookie(cookie).json(AuthResponse {
+                    token,
+                    message: "Login berhasil".to_string(),
+                });
+            }
+            Err(_) => return HttpResponse::InternalServerError().body("Gagal generate token"),
+        }
     }
+
+
 }

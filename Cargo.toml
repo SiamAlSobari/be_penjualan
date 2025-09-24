@@ -13,4 +13,5 @@ validator = { version = "0.19", features = ["derive"] }
 dotenvy = "0.15"
 chrono = { version = "0.4", features = ["serde"] } # untuk NaiveDateTime
 bcrypt = "0.14" 
+jsonwebtoken = "9"
 uuid = { version = "1", features = ["v4"] }
